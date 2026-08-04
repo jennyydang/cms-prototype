@@ -10,47 +10,17 @@ import {
   Trash2,
   LayoutTemplate,
   PanelTop,
-  AlignLeft,
-  Image as ImageIcon,
-  Columns2,
-  Quote,
-  MousePointerClick,
-  MoveVertical,
-  PanelBottom,
-  LayoutGrid,
-  MessageSquareQuote,
-  HelpCircle,
-  Sparkles,
-  Megaphone,
-  PackageSearch,
-  type LucideIcon,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { blockRegistry, createBlock } from '../../lib/blocks'
+import { blockIcons } from '../../lib/blockIcons'
 import { cx } from '../../lib/utils'
 import type { BlockFieldValue, PageBlock, PageBlockType } from '../../lib/types'
 import { BlockPreview } from './BlockPreview'
 import { BlockInspector } from './BlockInspector'
-
-const paletteIcons: Record<string, LucideIcon> = {
-  PanelTop,
-  AlignLeft,
-  Image: ImageIcon,
-  Columns2,
-  Quote,
-  MousePointerClick,
-  MoveVertical,
-  PanelBottom,
-  LayoutGrid,
-  MessageSquareQuote,
-  HelpCircle,
-  Sparkles,
-  Megaphone,
-  PackageSearch,
-}
 
 const paletteSections: { label: string; hint: string; category: 'content' | 'widget' }[] = [
   { label: 'Content blocks', hint: 'Single-purpose building blocks.', category: 'content' },
@@ -220,7 +190,7 @@ export function PageBuilderPage() {
                   <p className="px-1 pb-2 text-[11px] text-slate-400">{section.hint}</p>
                   <div className="space-y-1.5">
                     {defs.map((def) => {
-                      const Icon = paletteIcons[def.icon] ?? PanelTop
+                      const Icon = blockIcons[def.icon] ?? PanelTop
                       return (
                         <div
                           key={def.type}

@@ -96,6 +96,16 @@ permission checks against a real API.
   text label for screen readers, not just an "×". Both render together
   under the field in the inspector. See `src/lib/blocks.ts` for the full
   set of examples.
+- **Widget Manager** — an Admin-only screen (`/widgets`, next to Content
+  Types) that scans every content item's page-builder blocks and reports
+  where each widget type is actually placed: stat cards for widget types
+  defined vs. in use, total placements, and how many pages use at least
+  one; then a type-by-type breakdown — pick a widget on the left and its
+  panel on the right lists every page using it, with its content type,
+  status, how many times it appears on that page, and a link straight into
+  that page's Page Builder. A widget with zero usages shows a real empty
+  state rather than being hidden, so "nothing uses this yet" is as visible
+  as "used in 5 places."
 - **Preview** — opens a chrome-free render of a content item in a new tab:
   hero image, title, meta, and either its page-builder layout or rich-text
   body, with a desktop/mobile width toggle and a banner when the item isn't

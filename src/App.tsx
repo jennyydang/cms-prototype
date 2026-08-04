@@ -6,6 +6,7 @@ import { ContentEditorPage } from './features/content/ContentEditorPage'
 import { ContentPreviewPage } from './features/content/ContentPreviewPage'
 import { PageBuilderPage } from './features/pageBuilder/PageBuilderPage'
 import { ContentTypesPage } from './features/contentTypes/ContentTypesPage'
+import { WidgetManagerPage } from './features/widgets/WidgetManagerPage'
 import { MyPagesPage } from './features/myPages/MyPagesPage'
 import { MediaLibraryPage } from './features/media/MediaLibraryPage'
 import { UsersPage } from './features/users/UsersPage'
@@ -24,6 +25,7 @@ function App() {
         <Route path="/content/:typeSlug/:id" element={<ContentEditorPage />} />
         <Route path="/content/:typeSlug/:id/builder" element={<PageBuilderPage />} />
         <Route path="/content-types" element={<ContentTypesPage />} />
+        <Route path="/widgets" element={<WidgetManagerPage />} />
         <Route path="/media" element={<MediaLibraryPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/settings" element={<SettingsPage />} />

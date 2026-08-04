@@ -15,6 +15,7 @@ import {
   X,
   Layers,
   ClipboardCheck,
+  Blocks,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { cx } from '../../lib/utils'
@@ -118,6 +119,12 @@ export function Sidebar({ isMobileOpen, onCloseMobile, isCollapsed, onToggleColl
         <NavLink to="/content-types" className={({ isActive }) => navLinkClasses(isActive)} onClick={onCloseMobile} title={isCollapsed ? 'Content Types' : undefined}>
           <Boxes className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
           {!isCollapsed && 'Content Types'}
+        </NavLink>
+      )}
+      {isAdmin && (
+        <NavLink to="/widgets" className={({ isActive }) => navLinkClasses(isActive)} onClick={onCloseMobile} title={isCollapsed ? 'Widget Manager' : undefined}>
+          <Blocks className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+          {!isCollapsed && 'Widget Manager'}
         </NavLink>
       )}
       <NavLink to="/media" className={({ isActive }) => navLinkClasses(isActive)} onClick={onCloseMobile} title={isCollapsed ? 'Media Library' : undefined}>

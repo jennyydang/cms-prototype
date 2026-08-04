@@ -318,6 +318,7 @@ export const content: ContentItem[] = [
         buttonLabel: 'View open roles',
         buttonUrl: '#careers',
       }),
+      block('footer', {}),
     ],
   },
   {
@@ -334,6 +335,16 @@ export const content: ContentItem[] = [
     createdAt: daysAgo(170),
     updatedAt: daysAgo(6),
     publishedAt: daysAgo(170),
+    blocks: [
+      block('notification', {
+        variant: 'success',
+        message: 'Annual billing is here — save 20% on any plan.',
+        linkLabel: 'See annual pricing',
+        linkUrl: '#annual',
+        dismissible: 'true',
+      }),
+      block('testimonials', {}),
+    ],
   },
   {
     id: 'page_3',
@@ -362,6 +373,10 @@ export const content: ContentItem[] = [
     tags: [],
     createdAt: daysAgo(7),
     updatedAt: daysAgo(2),
+    blocks: [
+      block('faq', {}),
+      block('footer', {}),
+    ],
   },
   {
     id: 'product_1',

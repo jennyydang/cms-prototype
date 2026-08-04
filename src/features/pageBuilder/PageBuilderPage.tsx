@@ -11,12 +11,16 @@ import {
   LayoutTemplate,
   PanelTop,
   Wand2,
+  Send,
+  ThumbsUp,
+  Clock,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { blockRegistry, createBlock } from '../../lib/blocks'
 import { blockIcons } from '../../lib/blockIcons'
 import type { PageTemplateDef } from '../../lib/pageTemplates'
@@ -36,11 +40,12 @@ type SaveState = 'idle' | 'saving' | 'saved'
 export function PageBuilderPage() {
   const { typeSlug, id } = useParams<{ typeSlug: string; id: string }>()
   const navigate = useNavigate()
-  const { data, getContentTypeBySlug, updateContent } = useData()
+  const { data, currentUser, getContentTypeBySlug, updateContent, logActivity } = useData()
   const { showToast } = useToast()
 
   const contentType = getContentTypeBySlug(typeSlug ?? '')
   const item = useMemo(() => data.content.find((c) => c.id === id), [data.content, id])
+  const canReview = currentUser.role === 'Admin' || currentUser.role === 'Editor'
 
   const [blocks, setBlocks] = useState<PageBlock[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -151,6 +156,20 @@ export function PageBuilderPage() {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, data } : b)))
   }
 
+  function handleSendForReview() {
+    if (!id || !item) return
+    updateContent(id, { status: 'in-review' })
+    logActivity({ kind: 'updated', message: `submitted "${item.title || 'Untitled'}" for review`, targetId: id })
+    showToast({ title: 'Submitted for review', description: `"${item.title || 'This page'}" is waiting on an Editor or Admin.`, variant: 'info' })
+  }
+
+  function handleApproveAndPublish() {
+    if (!id || !item) return
+    updateContent(id, { status: 'published', publishedAt: new Date().toISOString() })
+    logActivity({ kind: 'published', message: `approved and published "${item.title || 'Untitled'}"`, targetId: id })
+    showToast({ title: 'Approved & published', description: `"${item.title || 'This page'}" is now live.`, variant: 'success' })
+  }
+
   function applyTemplate(template: PageTemplateDef) {
     setBlocks(template.blockTypes.map((type) => createBlock(type)))
     setSelectedId(null)
@@ -184,18 +203,36 @@ export function PageBuilderPage() {
           <LayoutTemplate className="h-4 w-4 text-slate-400" aria-hidden="true" />
           {item.title || 'Untitled'}
         </span>
+        <StatusBadge status={item.status} />
         <span aria-live="polite" className="text-xs text-slate-400">
           {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : ''}
         </span>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="ml-auto"
-          leftIcon={<Wand2 className="h-3.5 w-3.5" aria-hidden="true" />}
-          onClick={() => setTemplatePickerOpen(true)}
-        >
-          Templates
-        </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          {item.status === 'draft' && (
+            <Button size="sm" leftIcon={<Send className="h-3.5 w-3.5" aria-hidden="true" />} onClick={handleSendForReview}>
+              Send for review
+            </Button>
+          )}
+          {item.status === 'in-review' && canReview && (
+            <Button size="sm" leftIcon={<ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />} onClick={handleApproveAndPublish}>
+              Approve & publish
+            </Button>
+          )}
+          {item.status === 'in-review' && !canReview && (
+            <Badge color="amber" icon={<Clock className="h-3 w-3" aria-hidden="true" />}>
+              Waiting for review
+            </Badge>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Wand2 className="h-3.5 w-3.5" aria-hidden="true" />}
+            onClick={() => setTemplatePickerOpen(true)}
+          >
+            Templates
+          </Button>
+        </div>
         <Link
           to={`/content/${contentType.slug}/${id}/preview`}
           target="_blank"

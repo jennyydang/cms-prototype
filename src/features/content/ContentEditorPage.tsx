@@ -47,11 +47,19 @@ export function ContentEditorPage() {
   const createdRef = useRef(false)
 
   // "new" route: create a draft immediately, then redirect to its edit URL.
+  // Pages are built visually, so a new Page skips this classic editor
+  // entirely and drops straight into the Page Builder — the only way a
+  // page's layout gets created, keeping every page structured consistently
+  // from the very first block instead of starting as loose prose.
   useEffect(() => {
     if (id === 'new' && contentType && !createdRef.current) {
       createdRef.current = true
       const item = createContent(contentType.id, { title: 'Untitled', status: 'draft' })
-      navigate(`/content/${contentType.slug}/${item.id}`, { replace: true })
+      const destination =
+        contentType.slug === 'pages'
+          ? `/content/${contentType.slug}/${item.id}/builder`
+          : `/content/${contentType.slug}/${item.id}`
+      navigate(destination, { replace: true })
     }
   }, [id, contentType, createContent, navigate])
 

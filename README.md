@@ -99,6 +99,18 @@ permission checks against a real API.
   is defined once in a registry (`src/lib/blocks.ts`), and the
   palette/canvas/inspector all render from that shared schema.
 
+  **The Page Builder is the only way a Page gets created.** Clicking "New
+  Page" anywhere in the app (the Pages list, My Pages, the command palette)
+  creates the draft and drops straight into the builder — the classic
+  rich-text editor is skipped entirely for Pages, so every page starts as
+  a structured layout instead of loose prose (other content types, like
+  Blog Posts, still create into the classic editor, since they're written,
+  not assembled). The builder's own toolbar carries the workflow forward
+  from there: a **Send for review** button while the page is a draft, which
+  becomes **Approve & publish** for an Admin or Editor once it's in
+  review — the same actions and status transitions as My Pages, available
+  without leaving the builder.
+
   **Character limits and accessibility guidance, built into the fields
   themselves.** Any field can carry a `maxLength` (enforced on the input
   and shown as a live "x/N characters" counter — the Footer link label is

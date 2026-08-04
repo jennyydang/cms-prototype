@@ -55,9 +55,13 @@ function items(value: unknown): RepeaterItem[] {
 
 /** Renders a live-ish, read-only preview of a block's current data for the builder canvas. */
 export function BlockPreview({ block }: { block: PageBlock }) {
-  const { getMedia } = useData()
+  const { getMedia, getSharedWidget } = useData()
   const [dismissed, setDismissed] = useState(false)
-  const d = block.data
+  // A linked block's real content lives on the shared widget, not its own
+  // (empty) `data` — resolving it here means the canvas, live Preview, and
+  // every other page placing the same widget always render the current
+  // shared content, with the block's own data only as a defensive fallback.
+  const d = block.sharedWidgetId ? (getSharedWidget(block.sharedWidgetId)?.data ?? block.data) : block.data
 
   switch (block.type) {
     case 'hero': {

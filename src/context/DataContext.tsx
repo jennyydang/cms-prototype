@@ -10,11 +10,14 @@ import {
 import type {
   ActivityEntry,
   AppData,
+  BlockFieldValue,
   ContentItem,
   ContentStatus,
   ContentTypeDef,
   FieldDef,
   MediaItem,
+  PageBlockType,
+  SharedWidget,
   SiteSettings,
   UserAccount,
   UserRole,
@@ -33,7 +36,8 @@ function loadInitialData(): AppData {
     const parsed = JSON.parse(raw) as AppData
     // Guard against a stale shape from an earlier prototype iteration.
     if (!parsed.contentTypes || !parsed.content || !parsed.users) return buildSeedData()
-    return parsed
+    // Soft-migrate data saved before shared/reusable widgets existed.
+    return { ...parsed, sharedWidgets: parsed.sharedWidgets ?? [] }
   } catch {
     return buildSeedData()
   }
@@ -76,6 +80,13 @@ interface DataContextValue {
 
   // activity
   logActivity: (entry: Omit<ActivityEntry, 'id' | 'timestamp' | 'actorId'>) => void
+
+  // shared / reusable widgets
+  getSharedWidget: (id?: string) => SharedWidget | undefined
+  createSharedWidget: (type: PageBlockType, name: string, data: Record<string, BlockFieldValue>) => SharedWidget
+  updateSharedWidget: (id: string, patch: Partial<Pick<SharedWidget, 'name' | 'data'>>) => void
+  deleteSharedWidget: (id: string) => void
+  countSharedWidgetUsage: (id: string) => number
 
   resetDemoData: () => void
 }
@@ -283,6 +294,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setData((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }, [])
 
+  const getSharedWidget = useCallback((id?: string) => data.sharedWidgets.find((w) => w.id === id), [data.sharedWidgets])
+
+  const createSharedWidget = useCallback(
+    (type: PageBlockType, name: string, widgetData: Record<string, BlockFieldValue>): SharedWidget => {
+      const now = new Date().toISOString()
+      const widget: SharedWidget = {
+        id: uid('shared'),
+        type,
+        name,
+        data: widgetData,
+        createdById: CURRENT_USER_ID,
+        createdAt: now,
+        updatedAt: now,
+      }
+      setData((prev) => ({ ...prev, sharedWidgets: [...prev.sharedWidgets, widget] }))
+      return widget
+    },
+    [],
+  )
+
+  const updateSharedWidget = useCallback((id: string, patch: Partial<Pick<SharedWidget, 'name' | 'data'>>) => {
+    setData((prev) => ({
+      ...prev,
+      sharedWidgets: prev.sharedWidgets.map((w) =>
+        w.id === id ? { ...w, ...patch, updatedAt: new Date().toISOString() } : w,
+      ),
+    }))
+  }, [])
+
+  // Deleting a shared widget can't leave pages pointing at nothing: every
+  // block that referenced it becomes an independent local copy holding its
+  // last known content, instead of breaking or silently going blank.
+  const deleteSharedWidget = useCallback((id: string) => {
+    setData((prev) => {
+      const widget = prev.sharedWidgets.find((w) => w.id === id)
+      if (!widget) return prev
+      const content = prev.content.map((item) => {
+        if (!item.blocks?.some((b) => b.sharedWidgetId === id)) return item
+        return {
+          ...item,
+          blocks: item.blocks.map((b) =>
+            b.sharedWidgetId === id ? { id: b.id, type: b.type, data: { ...widget.data } } : b,
+          ),
+        }
+      })
+      return { ...prev, content, sharedWidgets: prev.sharedWidgets.filter((w) => w.id !== id) }
+    })
+  }, [])
+
+  const countSharedWidgetUsage = useCallback(
+    (id: string) => data.content.filter((item) => item.blocks?.some((b) => b.sharedWidgetId === id)).length,
+    [data.content],
+  )
+
   const resetDemoData = useCallback(() => {
     setData(buildSeedData())
   }, [])
@@ -312,6 +377,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     removeUser,
     updateSettings,
     logActivity,
+    getSharedWidget,
+    createSharedWidget,
+    updateSharedWidget,
+    deleteSharedWidget,
+    countSharedWidgetUsage,
     resetDemoData,
   }
 

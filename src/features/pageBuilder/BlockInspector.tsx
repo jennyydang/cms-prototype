@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Image as ImageIcon, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ChevronDown, ChevronUp, Image as ImageIcon, Link2, Plus, Trash2 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { Field } from '../../components/ui/Field'
 import { Input } from '../../components/ui/Input'
@@ -10,7 +10,7 @@ import { Button } from '../../components/ui/Button'
 import { MediaThumb } from '../../components/ui/MediaThumb'
 import { MediaPickerModal } from '../../components/ui/MediaPickerModal'
 import { createRepeaterItem, getBlockTypeDef } from '../../lib/blocks'
-import type { BlockFieldDef, BlockFieldValue, PageBlock, RepeaterItem } from '../../lib/types'
+import type { BlockFieldDef, BlockFieldValue, PageBlock, RepeaterItem, SharedWidget } from '../../lib/types'
 
 function asString(value: unknown): string {
   return typeof value === 'string' ? value : ''
@@ -27,13 +27,31 @@ function combinedHelp(field: BlockFieldDef, value: string): string | undefined {
   return parts.length ? parts.join(' — ') : undefined
 }
 
-/** Generic edit form for a block, rendered from its BlockTypeDef field list. */
+/**
+ * Generic edit form for a block, rendered from its BlockTypeDef field
+ * list. `data`/`onChange` are the *effective* content and setter — the
+ * caller (PageBuilderPage) routes these to either the block's own local
+ * data or a shared widget's data, depending on whether the block is
+ * linked, so this component never needs to know which.
+ */
 export function BlockInspector({
   block,
+  data,
   onChange,
+  sharedWidget,
+  usageCount,
+  onMakeReusable,
+  onUnlink,
+  onRename,
 }: {
   block: PageBlock
+  data: Record<string, BlockFieldValue>
   onChange: (data: Record<string, BlockFieldValue>) => void
+  sharedWidget?: SharedWidget
+  usageCount: number
+  onMakeReusable: (name: string) => void
+  onUnlink: () => void
+  onRename: (name: string) => void
 }) {
   const def = getBlockTypeDef(block.type)
 
@@ -44,12 +62,23 @@ export function BlockInspector({
         <p className="text-xs text-slate-500 dark:text-slate-400">{def.description}</p>
       </div>
 
+      {def.category === 'widget' && (
+        <ReusableWidgetPanel
+          label={def.label}
+          sharedWidget={sharedWidget}
+          usageCount={usageCount}
+          onMakeReusable={onMakeReusable}
+          onUnlink={onUnlink}
+          onRename={onRename}
+        />
+      )}
+
       {def.fields.map((field) => {
         if (field.input === 'repeater') {
-          const items = asItems(block.data[field.key])
+          const items = asItems(data[field.key])
 
           function setItems(next: RepeaterItem[]) {
-            onChange({ ...block.data, [field.key]: next })
+            onChange({ ...data, [field.key]: next })
           }
 
           return (
@@ -134,12 +163,89 @@ export function BlockInspector({
           <BlockFieldControl
             key={field.key}
             field={field}
-            value={asString(block.data[field.key])}
-            onChange={(value) => onChange({ ...block.data, [field.key]: value })}
+            value={asString(data[field.key])}
+            onChange={(value) => onChange({ ...data, [field.key]: value })}
             htmlId={`block-field-${block.id}-${field.key}`}
           />
         )
       })}
+    </div>
+  )
+}
+
+/** Lets a widget's content be saved once and placed on other pages by reference, edited from any of them. */
+function ReusableWidgetPanel({
+  label,
+  sharedWidget,
+  usageCount,
+  onMakeReusable,
+  onUnlink,
+  onRename,
+}: {
+  label: string
+  sharedWidget?: SharedWidget
+  usageCount: number
+  onMakeReusable: (name: string) => void
+  onUnlink: () => void
+  onRename: (name: string) => void
+}) {
+  const [draftName, setDraftName] = useState(label)
+  const [renameValue, setRenameValue] = useState(sharedWidget?.name ?? '')
+
+  // This panel doesn't remount when a block goes from unlinked to linked
+  // (e.g. right after "Save"), so the rename field's local draft has to be
+  // re-synced whenever the shared widget's actual name changes underneath it.
+  useEffect(() => {
+    setRenameValue(sharedWidget?.name ?? '')
+  }, [sharedWidget?.name])
+
+  if (sharedWidget) {
+    return (
+      <div className="space-y-2.5 rounded-lg border border-brand-200 bg-brand-50/50 p-3 dark:border-brand-500/30 dark:bg-brand-500/5">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300">
+          <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+          Reusable widget
+        </div>
+        <Field label="Name" htmlFor={`shared-name-${sharedWidget.id}`} hideLabel>
+          <Input
+            id={`shared-name-${sharedWidget.id}`}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={() => {
+              const trimmed = renameValue.trim()
+              if (trimmed && trimmed !== sharedWidget.name) onRename(trimmed)
+              else setRenameValue(sharedWidget.name)
+            }}
+          />
+        </Field>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Used on {usageCount} page{usageCount === 1 ? '' : 's'}. Editing this updates every page that uses it.
+        </p>
+        <Button size="sm" variant="secondary" className="w-full" onClick={onUnlink}>
+          Unlink (make independent copy)
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-dashed border-slate-300 p-3 dark:border-slate-700">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Save this {label.toLowerCase()} so you can reuse the same content on other pages — editing it anywhere
+        updates it everywhere.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          aria-label="Reusable widget name"
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+          placeholder={`${label} name`}
+          className="flex-1"
+        />
+        <Button size="sm" variant="secondary" onClick={() => draftName.trim() && onMakeReusable(draftName.trim())}>
+          Save
+        </Button>
+      </div>
     </div>
   )
 }

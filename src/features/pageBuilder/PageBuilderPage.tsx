@@ -14,6 +14,7 @@ import {
   Send,
   ThumbsUp,
   Clock,
+  Link2,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
@@ -21,11 +22,11 @@ import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
-import { blockRegistry, createBlock } from '../../lib/blocks'
+import { blockRegistry, createBlock, createSharedBlockInstance } from '../../lib/blocks'
 import { blockIcons } from '../../lib/blockIcons'
 import type { PageTemplateDef } from '../../lib/pageTemplates'
 import { cx } from '../../lib/utils'
-import type { BlockFieldValue, PageBlock, PageBlockType } from '../../lib/types'
+import type { BlockFieldValue, PageBlock, PageBlockType, SharedWidget } from '../../lib/types'
 import { BlockPreview } from './BlockPreview'
 import { BlockInspector } from './BlockInspector'
 import { TemplatePickerModal } from './TemplatePickerModal'
@@ -40,7 +41,17 @@ type SaveState = 'idle' | 'saving' | 'saved'
 export function PageBuilderPage() {
   const { typeSlug, id } = useParams<{ typeSlug: string; id: string }>()
   const navigate = useNavigate()
-  const { data, currentUser, getContentTypeBySlug, updateContent, logActivity } = useData()
+  const {
+    data,
+    currentUser,
+    getContentTypeBySlug,
+    updateContent,
+    logActivity,
+    getSharedWidget,
+    createSharedWidget,
+    updateSharedWidget,
+    countSharedWidgetUsage,
+  } = useData()
   const { showToast } = useToast()
 
   const contentType = getContentTypeBySlug(typeSlug ?? '')
@@ -52,6 +63,7 @@ export function PageBuilderPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const draggingBlockId = useRef<string | null>(null)
   const draggingPaletteType = useRef<PageBlockType | null>(null)
+  const draggingSharedWidgetId = useRef<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
   const [pendingTemplate, setPendingTemplate] = useState<PageTemplateDef | null>(null)
@@ -80,10 +92,13 @@ export function PageBuilderPage() {
   if (!item) return <Navigate to={`/content/${contentType.slug}`} replace />
 
   const selectedBlock = blocks.find((b) => b.id === selectedId) ?? null
+  const selectedSharedWidget = selectedBlock?.sharedWidgetId ? getSharedWidget(selectedBlock.sharedWidgetId) : undefined
+  const selectedData = selectedSharedWidget ? selectedSharedWidget.data : (selectedBlock?.data ?? {})
 
   function resetDrag() {
     draggingBlockId.current = null
     draggingPaletteType.current = null
+    draggingSharedWidgetId.current = null
     setDragOverIndex(null)
   }
 
@@ -96,6 +111,17 @@ export function PageBuilderPage() {
         return next
       })
       setSelectedId(newBlock.id)
+    } else if (draggingSharedWidgetId.current) {
+      const widget = getSharedWidget(draggingSharedWidgetId.current)
+      if (widget) {
+        const newBlock = createSharedBlockInstance(widget)
+        setBlocks((prev) => {
+          const next = [...prev]
+          next.splice(index, 0, newBlock)
+          return next
+        })
+        setSelectedId(newBlock.id)
+      }
     } else if (draggingBlockId.current) {
       const draggedId = draggingBlockId.current
       setBlocks((prev) => {
@@ -121,6 +147,12 @@ export function PageBuilderPage() {
 
   function appendBlock(type: PageBlockType) {
     const newBlock = createBlock(type)
+    setBlocks((prev) => [...prev, newBlock])
+    setSelectedId(newBlock.id)
+  }
+
+  function appendSharedWidget(widget: SharedWidget) {
+    const newBlock = createSharedBlockInstance(widget)
     setBlocks((prev) => [...prev, newBlock])
     setSelectedId(newBlock.id)
   }
@@ -154,6 +186,41 @@ export function PageBuilderPage() {
 
   function updateBlockData(blockId: string, data: Record<string, BlockFieldValue>) {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, data } : b)))
+  }
+
+  // Routes an inspector edit to the right place: a linked block's content
+  // lives on the shared widget (and so must edit every page that uses it),
+  // while a normal block just edits its own local data.
+  function handleInspectorChange(newData: Record<string, BlockFieldValue>) {
+    if (!selectedBlock) return
+    if (selectedSharedWidget) {
+      updateSharedWidget(selectedSharedWidget.id, { data: newData })
+    } else {
+      updateBlockData(selectedBlock.id, newData)
+    }
+  }
+
+  function handleMakeReusable(name: string) {
+    if (!selectedBlock) return
+    const widget = createSharedWidget(selectedBlock.type, name, selectedBlock.data)
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === selectedBlock.id ? { id: b.id, type: b.type, data: {}, sharedWidgetId: widget.id } : b)),
+    )
+    showToast({ title: 'Saved as reusable widget', description: `"${name}" can now be placed on other pages.`, variant: 'success' })
+  }
+
+  function handleUnlinkSelected() {
+    if (!selectedBlock || !selectedSharedWidget) return
+    const widget = selectedSharedWidget
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === selectedBlock.id ? { id: b.id, type: b.type, data: { ...widget.data } } : b)),
+    )
+    showToast({ title: 'Unlinked', description: 'This block is now an independent copy.', variant: 'info' })
+  }
+
+  function handleRenameShared(name: string) {
+    if (!selectedSharedWidget) return
+    updateSharedWidget(selectedSharedWidget.id, { name })
   }
 
   function handleSendForReview() {
@@ -296,6 +363,52 @@ export function PageBuilderPage() {
                 </div>
               )
             })}
+            {data.sharedWidgets.length > 0 && (
+              <div>
+                <p className="px-1 pb-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Reusable widgets</p>
+                <p className="px-1 pb-2 text-[11px] text-slate-400">Saved content — placing one links this page to it.</p>
+                <div className="space-y-1.5">
+                  {data.sharedWidgets.map((widget) => {
+                    const def = blockRegistry.find((d) => d.type === widget.type)
+                    const Icon = def ? (blockIcons[def.icon] ?? PanelTop) : PanelTop
+                    return (
+                      <div
+                        key={widget.id}
+                        draggable
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Add reusable widget ${widget.name}`}
+                        onDragStart={(e) => {
+                          draggingSharedWidgetId.current = widget.id
+                          e.dataTransfer.effectAllowed = 'copy'
+                          e.dataTransfer.setData('text/plain', widget.id)
+                        }}
+                        onDragEnd={resetDrag}
+                        onClick={() => appendSharedWidget(widget)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            appendSharedWidget(widget)
+                          }
+                        }}
+                        className="flex cursor-grab items-start gap-2.5 rounded-lg border border-brand-200 bg-brand-50/30 p-2.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50 active:cursor-grabbing dark:border-brand-500/30 dark:bg-brand-500/5 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/10"
+                      >
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white text-brand-500 dark:bg-slate-800">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+                            <Link2 className="h-3 w-3 shrink-0 text-brand-500" aria-hidden="true" />
+                            <span className="truncate">{widget.name}</span>
+                          </span>
+                          <span className="block text-xs text-slate-400">{def?.label ?? widget.type}</span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -405,6 +518,12 @@ export function PageBuilderPage() {
                           </button>
                         </div>
                       </div>
+                      {b.sharedWidgetId && (
+                        <span className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-brand-500 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm">
+                          <Link2 className="h-3 w-3" aria-hidden="true" />
+                          Reusable
+                        </span>
+                      )}
                       <BlockPreview block={b} />
                     </div>
                   </div>
@@ -418,7 +537,16 @@ export function PageBuilderPage() {
         {/* Inspector */}
         <div className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-panel dark:border-slate-800 dark:bg-slate-900 lg:h-full">
           {selectedBlock ? (
-            <BlockInspector block={selectedBlock} onChange={(newData) => updateBlockData(selectedBlock.id, newData)} />
+            <BlockInspector
+              block={selectedBlock}
+              data={selectedData}
+              onChange={handleInspectorChange}
+              sharedWidget={selectedSharedWidget}
+              usageCount={selectedSharedWidget ? countSharedWidgetUsage(selectedSharedWidget.id) : 0}
+              onMakeReusable={handleMakeReusable}
+              onUnlink={handleUnlinkSelected}
+              onRename={handleRenameShared}
+            />
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-2 py-10 text-center">
               <LayoutTemplate className="h-6 w-6 text-slate-300 dark:text-slate-600" aria-hidden="true" />

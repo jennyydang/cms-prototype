@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Blocks, FileStack, Layers, ArrowUpRight, CheckCircle2 } from 'lucide-react'
+import { Blocks, FileStack, Layers, ArrowUpRight, CheckCircle2, Link2, Trash2 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
+import { useToast } from '../../context/ToastContext'
 import { blockRegistry } from '../../lib/blocks'
 import { blockIcons, defaultBlockIcon } from '../../lib/blockIcons'
 import { StatCard } from '../../components/ui/StatCard'
 import { StatusBadge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { cx, timeAgo } from '../../lib/utils'
-import type { ContentItem, PageBlockType } from '../../lib/types'
+import type { ContentItem, PageBlockType, SharedWidget } from '../../lib/types'
 
 interface WidgetUsage {
   item: ContentItem
@@ -18,7 +20,9 @@ interface WidgetUsage {
 }
 
 export function WidgetManagerPage() {
-  const { data, getContentType } = useData()
+  const { data, getContentType, countSharedWidgetUsage, deleteSharedWidget } = useData()
+  const { showToast } = useToast()
+  const [widgetPendingDelete, setWidgetPendingDelete] = useState<SharedWidget | null>(null)
 
   const widgetDefs = useMemo(() => blockRegistry.filter((b) => b.category === 'widget'), [])
 
@@ -210,6 +214,78 @@ export function WidgetManagerPage() {
           </div>
         </div>
       </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white shadow-panel dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
+            <Link2 className="h-4 w-4 text-brand-500" aria-hidden="true" />
+            Reusable widgets
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Content saved once from the Page Builder and placed on more than one page by reference. Deleting one
+            turns every page that used it into an independent copy — nothing breaks.
+          </p>
+        </div>
+        {data.sharedWidgets.length === 0 ? (
+          <EmptyState
+            icon={<Link2 className="h-6 w-6" aria-hidden="true" />}
+            title="No reusable widgets yet"
+            description={'Select a widget in the Page Builder inspector and choose "Make reusable" to create one.'}
+          />
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+            {data.sharedWidgets.map((widget) => {
+              const def = blockRegistry.find((d) => d.type === widget.type)
+              const Icon = def ? (blockIcons[def.icon] ?? defaultBlockIcon) : defaultBlockIcon
+              const usage = countSharedWidgetUsage(widget.id)
+              return (
+                <li key={widget.id} className="flex items-center gap-3 px-5 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                    <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-slate-800 dark:text-slate-200">{widget.name}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">
+                      {def?.label ?? widget.type} · used on {usage} page{usage === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setWidgetPendingDelete(widget)}
+                    aria-label={`Delete reusable widget "${widget.name}"`}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
+      <ConfirmDialog
+        isOpen={widgetPendingDelete !== null}
+        onClose={() => setWidgetPendingDelete(null)}
+        onConfirm={() => {
+          if (!widgetPendingDelete) return
+          const usage = countSharedWidgetUsage(widgetPendingDelete.id)
+          deleteSharedWidget(widgetPendingDelete.id)
+          showToast({
+            title: 'Reusable widget deleted',
+            description:
+              usage > 0
+                ? `"${widgetPendingDelete.name}" is gone. The ${usage} page${usage === 1 ? '' : 's'} that used it now ${usage === 1 ? 'has' : 'have'} its own independent copy.`
+                : `"${widgetPendingDelete.name}" was not in use anywhere.`,
+            variant: 'success',
+          })
+          setWidgetPendingDelete(null)
+        }}
+        title="Delete this reusable widget?"
+        description={`"${widgetPendingDelete?.name ?? ''}" will no longer be listed for reuse. Pages that already place it keep their content, but it becomes an independent copy on each of them and will no longer stay in sync.`}
+        confirmLabel="Delete widget"
+        destructive
+      />
     </div>
   )
 }

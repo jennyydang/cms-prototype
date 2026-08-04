@@ -125,6 +125,31 @@ export interface PageBlock {
   id: string
   type: PageBlockType
   data: Record<string, BlockFieldValue>
+  /**
+   * If set, this block's content is a live reference to a SharedWidget
+   * rather than its own local `data` — editing it edits every page that
+   * places the same shared widget. `data` is left empty on linked blocks;
+   * it exists only so unlinking (or a missing shared widget) always has
+   * something safe to fall back to.
+   */
+  sharedWidgetId?: string
+}
+
+/**
+ * A widget's content saved once and placed on any number of pages by
+ * reference (via PageBlock.sharedWidgetId) — the page-builder equivalent
+ * of a reusable symbol/component. Editing a SharedWidget's data updates
+ * every page that uses it; there is exactly one copy of the content, no
+ * matter how many pages place it.
+ */
+export interface SharedWidget {
+  id: string
+  type: PageBlockType
+  name: string
+  data: Record<string, BlockFieldValue>
+  createdById: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type BlockInputKind = 'text' | 'textarea' | 'select' | 'media' | 'url' | 'boolean' | 'repeater'
@@ -219,4 +244,5 @@ export interface AppData {
   users: UserAccount[]
   activity: ActivityEntry[]
   settings: SiteSettings
+  sharedWidgets: SharedWidget[]
 }

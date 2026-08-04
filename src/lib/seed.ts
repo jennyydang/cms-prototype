@@ -5,14 +5,29 @@ import type {
   ContentTypeDef,
   MediaItem,
   PageBlock,
+  SharedWidget,
   SiteSettings,
   UserAccount,
 } from './types'
-import { createBlock } from './blocks'
+import { createBlock, createSharedBlockInstance } from './blocks'
 
 function block(type: PageBlock['type'], data: Record<string, string>): PageBlock {
   const b = createBlock(type)
   return { ...b, data: { ...b.data, ...data } }
+}
+
+// A reusable widget, saved once and placed on more than one page by
+// reference — editing it here (or from any page that uses it) updates
+// every page at once. Demonstrates the feature with real, seeded content
+// rather than requiring a user to set it up before it means anything.
+const siteFooterWidget: SharedWidget = {
+  id: 'shared_footer_main',
+  type: 'footer',
+  name: 'Site Footer',
+  data: createBlock('footer').data,
+  createdById: 'user_jenny',
+  createdAt: daysAgo(90),
+  updatedAt: daysAgo(2),
 }
 
 function daysAgo(n: number, hour = 9): string {
@@ -318,7 +333,7 @@ export const content: ContentItem[] = [
         buttonLabel: 'View open roles',
         buttonUrl: '#careers',
       }),
-      block('footer', {}),
+      createSharedBlockInstance(siteFooterWidget),
     ],
   },
   {
@@ -375,7 +390,7 @@ export const content: ContentItem[] = [
     updatedAt: daysAgo(2),
     blocks: [
       block('faq', {}),
-      block('footer', {}),
+      createSharedBlockInstance(siteFooterWidget),
     ],
   },
   {
@@ -438,6 +453,8 @@ export const settings: SiteSettings = {
   requireReviewBeforePublish: true,
 }
 
+export const sharedWidgets: SharedWidget[] = [siteFooterWidget]
+
 export function buildSeedData(): AppData {
-  return { contentTypes, content, media, users, activity, settings }
+  return { contentTypes, content, media, users, activity, settings, sharedWidgets }
 }

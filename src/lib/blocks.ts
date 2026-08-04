@@ -1,4 +1,4 @@
-import type { BlockFieldDef, BlockFieldValue, BlockTypeDef, PageBlock, PageBlockType, RepeaterItem } from './types'
+import type { BlockFieldDef, BlockFieldValue, BlockTypeDef, PageBlock, PageBlockType, RepeaterItem, SharedWidget } from './types'
 import { uid } from './utils'
 
 /**
@@ -520,4 +520,9 @@ function cloneBlockData(data: Record<string, BlockFieldValue>): Record<string, B
 export function createBlock(type: PageBlockType): PageBlock {
   const def = getBlockTypeDef(type)
   return { id: uid('block'), type, data: cloneBlockData(def.defaultData) }
+}
+
+/** A fresh placement of an existing SharedWidget — its own block id, but content read live from the shared record. */
+export function createSharedBlockInstance(widget: SharedWidget): PageBlock {
+  return { id: uid('block'), type: widget.type, data: {}, sharedWidgetId: widget.id }
 }

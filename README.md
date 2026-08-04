@@ -123,6 +123,27 @@ permission checks against a real API.
   text label for screen readers, not just an "×". Both render together
   under the field in the inspector. See `src/lib/blocks.ts` for the full
   set of examples.
+
+  **Reusable widgets — save once, place on any page, edit from any of
+  them.** Select any widget (Footer, Testimonials, FAQ, etc. — content
+  blocks like Hero and Text are single-use by design and don't get this
+  option) and the inspector offers a "Make reusable" panel: give it a
+  name and it becomes a `SharedWidget`, listed in its own **Reusable
+  widgets** palette section on every page from then on. Dragging or
+  clicking one from that section places a block that's a live reference
+  to the saved widget, not a copy — its content lives on the shared
+  record, so editing it from *any* page that uses it (including the page
+  it was first saved from) updates every other page immediately, and the
+  standalone Preview reflects the change too. A blue **Reusable** badge
+  marks linked blocks on the canvas, and the inspector shows how many
+  pages currently use it, with an **Unlink** button that turns that one
+  placement into an independent copy without touching the shared record
+  or any other page. Deleting a shared widget (from the Widget Manager)
+  never leaves a page pointing at nothing — every block that referenced it
+  becomes its own independent copy of the last known content instead. The
+  seeded "About us" and "Security & compliance" pages already share one
+  footer out of the box, so the effect is visible without setting anything
+  up first.
 - **Widget Manager** — an Admin-only screen (`/widgets`, next to Content
   Types) that scans every content item's page-builder blocks and reports
   where each widget type is actually placed: stat cards for widget types

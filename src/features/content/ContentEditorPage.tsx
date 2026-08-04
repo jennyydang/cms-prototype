@@ -17,6 +17,7 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
+  LayoutTemplate,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
@@ -28,7 +29,7 @@ import { Button } from '../../components/ui/Button'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/ui/Avatar'
 import { MediaThumb } from '../../components/ui/MediaThumb'
-import { Modal } from '../../components/ui/Modal'
+import { MediaPickerModal } from '../../components/ui/MediaPickerModal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Dropdown, DropdownItem, DropdownSeparator } from '../../components/ui/Dropdown'
 import { slugify, wordCount, readingTime, formatDateTime } from '../../lib/utils'
@@ -219,6 +220,18 @@ export function ContentEditorPage() {
         </span>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="secondary"
+            leftIcon={<LayoutTemplate className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => navigate(`/content/${contentType.slug}/${id}/builder`)}
+          >
+            Page builder
+            {item.blocks && item.blocks.length > 0 && (
+              <span className="ml-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                {item.blocks.length}
+              </span>
+            )}
+          </Button>
           {status !== 'published' ? (
             <Button variant="primary" onClick={() => handleStatusChange('published')}>
               Publish
@@ -420,26 +433,12 @@ export function ContentEditorPage() {
         </aside>
       </div>
 
-      <Modal isOpen={imagePickerOpen} onClose={() => setImagePickerOpen(false)} title="Select a featured image" size="lg">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {data.media
-            .filter((m) => m.kind === 'image')
-            .map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setFeaturedImageId(m.id)
-                  setImagePickerOpen(false)
-                }}
-                className="group text-left focus-visible:outline-none"
-              >
-                <MediaThumb item={m} className="aspect-square w-full ring-2 ring-transparent group-focus-visible:ring-brand-500" />
-                <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{m.filename}</p>
-              </button>
-            ))}
-        </div>
-      </Modal>
+      <MediaPickerModal
+        isOpen={imagePickerOpen}
+        onClose={() => setImagePickerOpen(false)}
+        onSelect={setFeaturedImageId}
+        title="Select a featured image"
+      />
 
       <ConfirmDialog
         isOpen={confirmDeleteOpen}

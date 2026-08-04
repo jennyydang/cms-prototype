@@ -74,6 +74,43 @@ export interface ContentItem {
   updatedAt: string
   publishedAt?: string
   scheduledFor?: string
+  /** Optional visual layout, assembled in the drag-and-drop page builder. */
+  blocks?: PageBlock[]
+}
+
+/**
+ * Page Builder block model.
+ *
+ * Mirrors the ContentTypeDef/FieldDef schema pattern: each block *type* is
+ * described once (src/lib/blocks.ts) as a list of editable fields, and the
+ * builder UI renders the palette, canvas preview, and inspector form from
+ * that single definition instead of hardcoding a form per block.
+ */
+export type PageBlockType = 'hero' | 'text' | 'image' | 'columns' | 'quote' | 'cta' | 'spacer'
+
+export interface PageBlock {
+  id: string
+  type: PageBlockType
+  data: Record<string, string>
+}
+
+export type BlockInputKind = 'text' | 'textarea' | 'select' | 'media' | 'url'
+
+export interface BlockFieldDef {
+  key: string
+  label: string
+  input: BlockInputKind
+  options?: FieldOption[]
+  placeholder?: string
+}
+
+export interface BlockTypeDef {
+  type: PageBlockType
+  label: string
+  description: string
+  icon: string
+  fields: BlockFieldDef[]
+  defaultData: Record<string, string>
 }
 
 export type MediaKind = 'image' | 'document' | 'video'

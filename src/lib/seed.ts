@@ -4,9 +4,16 @@ import type {
   ContentItem,
   ContentTypeDef,
   MediaItem,
+  PageBlock,
   SiteSettings,
   UserAccount,
 } from './types'
+import { createBlock } from './blocks'
+
+function block(type: PageBlock['type'], data: Record<string, string>): PageBlock {
+  const b = createBlock(type)
+  return { ...b, data: { ...b.data, ...data } }
+}
 
 function daysAgo(n: number, hour = 9): string {
   const d = new Date()
@@ -286,6 +293,32 @@ export const content: ContentItem[] = [
     createdAt: daysAgo(180),
     updatedAt: daysAgo(60),
     publishedAt: daysAgo(180),
+    blocks: [
+      block('hero', {
+        heading: 'We build tools for people who publish',
+        subheading: 'Atlas started as a side project between two editors tired of fighting their CMS.',
+        align: 'center',
+        ctaLabel: 'Meet the team',
+        ctaUrl: '#team',
+      }),
+      block('columns', {
+        leftHeading: 'Our mission',
+        leftBody: 'Give every team a content workflow that feels as good as the writing itself.',
+        rightHeading: 'Our approach',
+        rightBody: 'Ship small, listen closely, and keep the editor out of the way of the writer.',
+      }),
+      block('quote', {
+        quote: 'The best CMS is the one your team forgets is even there.',
+        attribution: 'Jenny Dang, Founder',
+      }),
+      block('spacer', { size: 'md' }),
+      block('cta', {
+        heading: 'Come work with us',
+        body: 'We are a small, remote-first team building the next version of Atlas.',
+        buttonLabel: 'View open roles',
+        buttonUrl: '#careers',
+      }),
+    ],
   },
   {
     id: 'page_2',

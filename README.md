@@ -44,6 +44,15 @@ permission checks against a real API.
   indicator.
 - **Content Types** — the schema editor: add/require/remove fields per
   content type and create new content types entirely.
+- **Page Builder** — a drag-and-drop layout canvas for any content item.
+  Drag blocks (Hero, Text, Image, Two Columns, Quote, CTA, Spacer) from a
+  palette onto the page, reorder by dragging, and edit each block's content
+  in a field-driven inspector panel. Every drag interaction has a
+  keyboard/click equivalent (click a palette item to append it, Move
+  up/down buttons to reorder) so the builder doesn't require a mouse. Like
+  Content Types, block types are defined once in a registry
+  (`src/lib/blocks.ts`) and the palette/canvas/inspector all render from
+  that shared schema.
 - **Media Library** — drag-and-drop or click-to-upload (real image files are
   read and previewed via `FileReader`; other kinds get a deterministic
   gradient placeholder), search/filter, and an asset detail panel with
@@ -69,6 +78,10 @@ permission checks against a real API.
 - Form fields link labels, help text, and errors via `aria-describedby`;
   toasts and autosave status announce through `aria-live` regions.
 - Tested against both light and dark color schemes for contrast.
+- The Page Builder's drag-and-drop has a full non-drag path: palette items
+  are focusable and activate on <kbd>Enter</kbd>/<kbd>Space</kbd>, and every
+  block carries Move up/down, duplicate, and delete buttons that reach the
+  same reorder logic as dragging.
 
 ## Tech stack
 

@@ -33,6 +33,15 @@ permission checks against a real API.
 
 ## Features
 
+- **My Pages** — a personal view into the review pipeline for the Page
+  content type: stat cards for pages you've created, how many need
+  approval, how many are published, and how many are still drafts; a
+  queue of pages from the rest of the team waiting on your review (if
+  you're an Admin or Editor); and a "My pages" / "All pages" table with
+  status badges, one-click **Submit for review** on your own drafts, and
+  **Approve** on anything in review. The sidebar badge mirrors the pending
+  count so reviewers see it without opening the page. Approvals log to the
+  same activity feed the Dashboard reads from, so the two stay in sync.
 - **Dashboard** — content stats, recently updated items, an activity feed,
   and a status breakdown at a glance.
 - **Content collections** — per-content-type list views with search, status

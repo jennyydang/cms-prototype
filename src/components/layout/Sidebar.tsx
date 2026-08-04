@@ -14,6 +14,7 @@ import {
   ChevronsRight,
   X,
   Layers,
+  ClipboardCheck,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { cx } from '../../lib/utils'
@@ -31,6 +32,12 @@ export function Sidebar({ isMobileOpen, onCloseMobile, isCollapsed, onToggleColl
   const { data, currentUser } = useData()
   const [contentExpanded, setContentExpanded] = useState(true)
   const isAdmin = currentUser.role === 'Admin'
+  const canReview = currentUser.role === 'Admin' || currentUser.role === 'Editor'
+
+  const pageType = data.contentTypes.find((t) => t.slug === 'pages')
+  const pendingReviewCount = pageType
+    ? data.content.filter((c) => c.contentTypeId === pageType.id && c.status === 'in-review' && c.authorId !== currentUser.id).length
+    : 0
 
   const navLinkClasses = (isActive: boolean) =>
     cx(
@@ -45,6 +52,24 @@ export function Sidebar({ isMobileOpen, onCloseMobile, isCollapsed, onToggleColl
       <NavLink to="/" end className={({ isActive }) => navLinkClasses(isActive)} onClick={onCloseMobile}>
         <LayoutDashboard className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
         {!isCollapsed && 'Dashboard'}
+      </NavLink>
+      <NavLink
+        to="/my-pages"
+        className={({ isActive }) => navLinkClasses(isActive)}
+        onClick={onCloseMobile}
+        title={isCollapsed ? 'My Pages' : undefined}
+      >
+        <ClipboardCheck className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+        {!isCollapsed && (
+          <span className="flex flex-1 items-center justify-between">
+            My Pages
+            {canReview && pendingReviewCount > 0 && (
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white">
+                {pendingReviewCount}
+              </span>
+            )}
+          </span>
+        )}
       </NavLink>
 
       <div className="mt-2">

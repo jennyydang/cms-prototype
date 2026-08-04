@@ -13,13 +13,15 @@ import {
   Sparkles,
   Megaphone,
   PackageSearch,
+  Rocket,
   type LucideIcon,
 } from 'lucide-react'
 
 /**
- * Maps a BlockTypeDef's `icon` (a string, so the registry stays plain data)
- * to the actual Lucide component. Shared between the Page Builder palette
- * and the Widget Manager so both render block/widget icons identically.
+ * Maps a BlockTypeDef's or PageTemplateDef's `icon` (a string, so the
+ * registries stay plain data) to the actual Lucide component. Shared by
+ * the Page Builder palette, the template picker, and the Widget Manager
+ * so all three render block/widget/template icons identically.
  */
 export const blockIcons: Record<string, LucideIcon> = {
   PanelTop,
@@ -36,6 +38,7 @@ export const blockIcons: Record<string, LucideIcon> = {
   Sparkles,
   Megaphone,
   PackageSearch,
+  Rocket,
 }
 
 export const defaultBlockIcon: LucideIcon = PanelTop

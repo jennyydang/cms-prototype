@@ -10,17 +10,21 @@ import {
   Trash2,
   LayoutTemplate,
   PanelTop,
+  Wand2,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { blockRegistry, createBlock } from '../../lib/blocks'
 import { blockIcons } from '../../lib/blockIcons'
+import type { PageTemplateDef } from '../../lib/pageTemplates'
 import { cx } from '../../lib/utils'
 import type { BlockFieldValue, PageBlock, PageBlockType } from '../../lib/types'
 import { BlockPreview } from './BlockPreview'
 import { BlockInspector } from './BlockInspector'
+import { TemplatePickerModal } from './TemplatePickerModal'
 
 const paletteSections: { label: string; hint: string; category: 'content' | 'widget' }[] = [
   { label: 'Content blocks', hint: 'Single-purpose building blocks.', category: 'content' },
@@ -44,6 +48,8 @@ export function PageBuilderPage() {
   const draggingBlockId = useRef<string | null>(null)
   const draggingPaletteType = useRef<PageBlockType | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  const [pendingTemplate, setPendingTemplate] = useState<PageTemplateDef | null>(null)
 
   const hydrated = useRef(false)
   useEffect(() => {
@@ -145,6 +151,23 @@ export function PageBuilderPage() {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, data } : b)))
   }
 
+  function applyTemplate(template: PageTemplateDef) {
+    setBlocks(template.blockTypes.map((type) => createBlock(type)))
+    setSelectedId(null)
+    setTemplatePickerOpen(false)
+    setPendingTemplate(null)
+    showToast({ title: 'Template applied', description: `Started from "${template.name}".`, variant: 'success' })
+  }
+
+  function handleSelectTemplate(template: PageTemplateDef) {
+    if (blocks.length > 0) {
+      setTemplatePickerOpen(false)
+      setPendingTemplate(template)
+    } else {
+      applyTemplate(template)
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col">
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -164,11 +187,20 @@ export function PageBuilderPage() {
         <span aria-live="polite" className="text-xs text-slate-400">
           {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : ''}
         </span>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="ml-auto"
+          leftIcon={<Wand2 className="h-3.5 w-3.5" aria-hidden="true" />}
+          onClick={() => setTemplatePickerOpen(true)}
+        >
+          Templates
+        </Button>
         <Link
           to={`/content/${contentType.slug}/${id}/preview`}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <Eye className="h-4 w-4" aria-hidden="true" />
           Preview
@@ -247,7 +279,12 @@ export function PageBuilderPage() {
                 <EmptyState
                   icon={<LayoutTemplate className="h-6 w-6" aria-hidden="true" />}
                   title="This page is empty"
-                  description="Drag a block from the left, or click one to add it here."
+                  description="Drag a block from the left, click one to add it, or start from a template for a consistent layout."
+                  action={
+                    <Button variant="secondary" leftIcon={<Wand2 className="h-4 w-4" aria-hidden="true" />} onClick={() => setTemplatePickerOpen(true)}>
+                      Browse templates
+                    </Button>
+                  }
                 />
               </div>
             ) : (
@@ -366,6 +403,21 @@ export function PageBuilderPage() {
       >
         Done editing layout
       </Button>
+
+      <TemplatePickerModal
+        isOpen={templatePickerOpen}
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelect={handleSelectTemplate}
+      />
+      <ConfirmDialog
+        isOpen={pendingTemplate !== null}
+        onClose={() => setPendingTemplate(null)}
+        onConfirm={() => pendingTemplate && applyTemplate(pendingTemplate)}
+        title="Replace the current layout?"
+        description={`This page already has ${blocks.length} block${blocks.length === 1 ? '' : 's'}. Applying "${pendingTemplate?.name ?? ''}" will replace ${blocks.length === 1 ? 'it' : 'them'} — this can't be undone.`}
+        confirmLabel="Replace layout"
+        destructive
+      />
     </div>
   )
 }

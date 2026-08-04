@@ -80,7 +80,22 @@ permission checks against a real API.
   repeater items) in a field-driven inspector panel. Every drag interaction
   has a keyboard/click equivalent (click a palette item to append it, Move
   up/down buttons to reorder blocks and repeater items) so the builder
-  doesn't require a mouse. Like Content Types, every block and widget type
+  doesn't require a mouse.
+
+  **Page templates, for structural consistency.** A "Templates" button
+  (also offered as the empty canvas's main call to action) opens a picker
+  with named starting layouts — **Landing Page** (Hero → Blurb grid →
+  Testimonials → FAQ → CTA → Footer) and **Product Page** (Product Details
+  → Blurb grid → Testimonials → FAQ → Footer) — each shown as a visual
+  chip sequence so the structure is obvious before you commit to it.
+  Applying one on an empty page just adds the blocks; applying one over
+  existing content asks for confirmation first, since it replaces the
+  current layout. Templates are defined in `src/lib/pageTemplates.ts` as
+  nothing more than an ordered list of block types — every block still
+  starts with the same example content it would if added individually
+  from the palette, so there's no separate copy to keep in sync.
+
+  Like Content Types, every block and widget type
   is defined once in a registry (`src/lib/blocks.ts`), and the
   palette/canvas/inspector all render from that shared schema.
 

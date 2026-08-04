@@ -18,6 +18,11 @@ import {
   MoveVertical,
   PanelBottom,
   LayoutGrid,
+  MessageSquareQuote,
+  HelpCircle,
+  Sparkles,
+  Megaphone,
+  PackageSearch,
   type LucideIcon,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
@@ -40,6 +45,11 @@ const paletteIcons: Record<string, LucideIcon> = {
   MoveVertical,
   PanelBottom,
   LayoutGrid,
+  MessageSquareQuote,
+  HelpCircle,
+  Sparkles,
+  Megaphone,
+  PackageSearch,
 }
 
 const paletteSections: { label: string; hint: string; category: 'content' | 'widget' }[] = [

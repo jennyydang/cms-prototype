@@ -5,6 +5,7 @@ import { Field } from '../../components/ui/Field'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Select } from '../../components/ui/Select'
+import { Switch } from '../../components/ui/Switch'
 import { Button } from '../../components/ui/Button'
 import { MediaThumb } from '../../components/ui/MediaThumb'
 import { MediaPickerModal } from '../../components/ui/MediaPickerModal'
@@ -17,6 +18,13 @@ function asString(value: unknown): string {
 
 function asItems(value: unknown): RepeaterItem[] {
   return Array.isArray(value) ? value : []
+}
+
+/** Combines a field's accessibility/guidance copy with a live "x/N characters" counter. */
+function combinedHelp(field: BlockFieldDef, value: string): string | undefined {
+  const counter = field.maxLength ? `${value.length}/${field.maxLength} characters` : undefined
+  const parts = [field.helpText, counter].filter(Boolean)
+  return parts.length ? parts.join(' — ') : undefined
 }
 
 /** Generic edit form for a block, rendered from its BlockTypeDef field list. */
@@ -178,14 +186,24 @@ function BlockFieldControl({
             <span className="text-xs font-medium">Select image</span>
           </button>
         )}
+        {field.helpText && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{field.helpText}</p>}
         <MediaPickerModal isOpen={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={onChange} />
+      </div>
+    )
+  }
+
+  if (field.input === 'boolean') {
+    return (
+      <div>
+        <Switch id={htmlId} checked={value === 'true'} onChange={(checked) => onChange(checked ? 'true' : 'false')} label={field.label} />
+        {field.helpText && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{field.helpText}</p>}
       </div>
     )
   }
 
   if (field.input === 'select') {
     return (
-      <Field label={field.label} htmlFor={htmlId}>
+      <Field label={field.label} htmlFor={htmlId} helpText={field.helpText}>
         <Select id={htmlId} value={value} onChange={(e) => onChange(e.target.value)}>
           {field.options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -199,19 +217,27 @@ function BlockFieldControl({
 
   if (field.input === 'textarea') {
     return (
-      <Field label={field.label} htmlFor={htmlId}>
-        <Textarea id={htmlId} rows={3} value={value} placeholder={field.placeholder} onChange={(e) => onChange(e.target.value)} />
+      <Field label={field.label} htmlFor={htmlId} helpText={combinedHelp(field, value)}>
+        <Textarea
+          id={htmlId}
+          rows={3}
+          value={value}
+          placeholder={field.placeholder}
+          maxLength={field.maxLength}
+          onChange={(e) => onChange(e.target.value)}
+        />
       </Field>
     )
   }
 
   return (
-    <Field label={field.label} htmlFor={htmlId}>
+    <Field label={field.label} htmlFor={htmlId} helpText={combinedHelp(field, value)}>
       <Input
         id={htmlId}
         type={field.input === 'url' ? 'url' : 'text'}
         value={value}
         placeholder={field.placeholder}
+        maxLength={field.maxLength}
         onChange={(e) => onChange(e.target.value)}
       />
     </Field>

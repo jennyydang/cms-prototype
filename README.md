@@ -49,13 +49,22 @@ permission checks against a real API.
   - **Content blocks** — single-purpose pieces: Hero, Text, Image, Two
     Columns, Quote, CTA, Spacer.
   - **Widgets** — pre-composed, purpose-built sections with their own
-    repeatable data: a **Footer** widget (tagline, a list of nav links, a
-    list of social links, copyright) and a **Product Gallery** widget (a
-    list of products, each with its own image, name, price, and
-    description). Widgets are built on a "repeater" field type — a field
-    whose value is a reorderable list of items with their own sub-fields —
-    so adding another widget like this later is a registry entry, not new
-    UI code.
+    repeatable data, built on a "repeater" field type (a field whose value
+    is a reorderable list of items with their own sub-fields), so adding a
+    new widget is a registry entry, not new UI code:
+    - **Footer** — tagline, a list of nav links, a list of social links, copyright.
+    - **Product Gallery** — a list of products, each with an image, name, price, description.
+    - **Testimonials** — a list of customer quotes with photo, name, and role.
+    - **FAQ** — a list of question/answer pairs, rendered as native
+      `<details>`/`<summary>` elements — expandable, keyboard-operable, and
+      announced correctly by screen readers with no ARIA required.
+    - **Blurb grid** — a list of icon + title + description tiles for
+      highlighting a handful of features.
+    - **Notification banner** — a site-wide announcement with a type
+      (info/success/warning/error), message, optional link, and a
+      dismissible toggle.
+    - **Product Details** — one product in depth: image, price,
+      description, a feature list, and a call-to-action button.
 
   Drag any block/widget from the palette onto the page, reorder by
   dragging, and edit its content (including adding/removing/reordering
@@ -65,6 +74,19 @@ permission checks against a real API.
   doesn't require a mouse. Like Content Types, every block and widget type
   is defined once in a registry (`src/lib/blocks.ts`), and the
   palette/canvas/inspector all render from that shared schema.
+
+  **Character limits and accessibility guidance, built into the fields
+  themselves.** Any field can carry a `maxLength` (enforced on the input
+  and shown as a live "x/N characters" counter — the Footer link label is
+  capped at 24 characters, a testimonial quote at 240, an FAQ answer at
+  500, a notification message at 160) and/or `helpText` with accessibility
+  reminders a content manager wouldn't otherwise think to look up — e.g.
+  "give this image real alt text in the Media Library, not the filename"
+  on every image field, "avoid vague link text like 'click here'" on the
+  notification's link label, or a note that the dismiss button carries a
+  text label for screen readers, not just an "×". Both render together
+  under the field in the inspector. See `src/lib/blocks.ts` for the full
+  set of examples.
 - **Preview** — opens a chrome-free render of a content item in a new tab:
   hero image, title, meta, and either its page-builder layout or rich-text
   body, with a desktop/mobile width toggle and a banner when the item isn't

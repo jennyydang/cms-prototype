@@ -16,6 +16,8 @@ import {
   Quote,
   MousePointerClick,
   MoveVertical,
+  PanelBottom,
+  LayoutGrid,
   type LucideIcon,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
@@ -24,7 +26,7 @@ import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { blockRegistry, createBlock } from '../../lib/blocks'
 import { cx } from '../../lib/utils'
-import type { PageBlock, PageBlockType } from '../../lib/types'
+import type { BlockFieldValue, PageBlock, PageBlockType } from '../../lib/types'
 import { BlockPreview } from './BlockPreview'
 import { BlockInspector } from './BlockInspector'
 
@@ -36,7 +38,14 @@ const paletteIcons: Record<string, LucideIcon> = {
   Quote,
   MousePointerClick,
   MoveVertical,
+  PanelBottom,
+  LayoutGrid,
 }
+
+const paletteSections: { label: string; hint: string; category: 'content' | 'widget' }[] = [
+  { label: 'Content blocks', hint: 'Single-purpose building blocks.', category: 'content' },
+  { label: 'Widgets', hint: 'Pre-composed, purpose-built sections.', category: 'widget' },
+]
 
 type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -152,7 +161,7 @@ export function PageBuilderPage() {
     if (selectedId === blockId) setSelectedId(null)
   }
 
-  function updateBlockData(blockId: string, data: Record<string, string>) {
+  function updateBlockData(blockId: string, data: Record<string, BlockFieldValue>) {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, data } : b)))
   }
 
@@ -190,40 +199,51 @@ export function PageBuilderPage() {
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[240px_1fr_320px]">
         {/* Palette */}
         <div className="overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-panel dark:border-slate-800 dark:bg-slate-900 lg:h-full">
-          <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Blocks</p>
           <p className="px-1 pb-3 text-xs text-slate-400">Drag onto the page, or click to add.</p>
-          <div className="space-y-1.5">
-            {blockRegistry.map((def) => {
-              const Icon = paletteIcons[def.icon] ?? PanelTop
+          <div className="space-y-5">
+            {paletteSections.map((section) => {
+              const defs = blockRegistry.filter((def) => def.category === section.category)
+              if (defs.length === 0) return null
               return (
-                <div
-                  key={def.type}
-                  draggable
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Add ${def.label} block`}
-                  onDragStart={(e) => {
-                    draggingPaletteType.current = def.type
-                    e.dataTransfer.effectAllowed = 'copy'
-                    e.dataTransfer.setData('text/plain', def.type)
-                  }}
-                  onDragEnd={resetDrag}
-                  onClick={() => appendBlock(def.type)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      appendBlock(def.type)
-                    }
-                  }}
-                  className="flex cursor-grab items-start gap-2.5 rounded-lg border border-slate-200 p-2.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50 active:cursor-grabbing dark:border-slate-800 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/10"
-                >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-slate-800 dark:text-slate-200">{def.label}</span>
-                    <span className="block text-xs text-slate-400">{def.description}</span>
-                  </span>
+                <div key={section.category}>
+                  <p className="px-1 pb-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{section.label}</p>
+                  <p className="px-1 pb-2 text-[11px] text-slate-400">{section.hint}</p>
+                  <div className="space-y-1.5">
+                    {defs.map((def) => {
+                      const Icon = paletteIcons[def.icon] ?? PanelTop
+                      return (
+                        <div
+                          key={def.type}
+                          draggable
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Add ${def.label} block`}
+                          onDragStart={(e) => {
+                            draggingPaletteType.current = def.type
+                            e.dataTransfer.effectAllowed = 'copy'
+                            e.dataTransfer.setData('text/plain', def.type)
+                          }}
+                          onDragEnd={resetDrag}
+                          onClick={() => appendBlock(def.type)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              appendBlock(def.type)
+                            }
+                          }}
+                          className="flex cursor-grab items-start gap-2.5 rounded-lg border border-slate-200 p-2.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50 active:cursor-grabbing dark:border-slate-800 dark:hover:border-brand-500/40 dark:hover:bg-brand-500/10"
+                        >
+                          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium text-slate-800 dark:text-slate-200">{def.label}</span>
+                            <span className="block text-xs text-slate-400">{def.description}</span>
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )
             })}

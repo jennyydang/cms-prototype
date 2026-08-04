@@ -45,14 +45,26 @@ permission checks against a real API.
 - **Content Types** — the schema editor: add/require/remove fields per
   content type and create new content types entirely.
 - **Page Builder** — a drag-and-drop layout canvas for any content item.
-  Drag blocks (Hero, Text, Image, Two Columns, Quote, CTA, Spacer) from a
-  palette onto the page, reorder by dragging, and edit each block's content
-  in a field-driven inspector panel. Every drag interaction has a
-  keyboard/click equivalent (click a palette item to append it, Move
-  up/down buttons to reorder) so the builder doesn't require a mouse. Like
-  Content Types, block types are defined once in a registry
-  (`src/lib/blocks.ts`) and the palette/canvas/inspector all render from
-  that shared schema.
+  The palette has two sections:
+  - **Content blocks** — single-purpose pieces: Hero, Text, Image, Two
+    Columns, Quote, CTA, Spacer.
+  - **Widgets** — pre-composed, purpose-built sections with their own
+    repeatable data: a **Footer** widget (tagline, a list of nav links, a
+    list of social links, copyright) and a **Product Gallery** widget (a
+    list of products, each with its own image, name, price, and
+    description). Widgets are built on a "repeater" field type — a field
+    whose value is a reorderable list of items with their own sub-fields —
+    so adding another widget like this later is a registry entry, not new
+    UI code.
+
+  Drag any block/widget from the palette onto the page, reorder by
+  dragging, and edit its content (including adding/removing/reordering
+  repeater items) in a field-driven inspector panel. Every drag interaction
+  has a keyboard/click equivalent (click a palette item to append it, Move
+  up/down buttons to reorder blocks and repeater items) so the builder
+  doesn't require a mouse. Like Content Types, every block and widget type
+  is defined once in a registry (`src/lib/blocks.ts`), and the
+  palette/canvas/inspector all render from that shared schema.
 - **Preview** — opens a chrome-free render of a content item in a new tab:
   hero image, title, meta, and either its page-builder layout or rich-text
   body, with a desktop/mobile width toggle and a banner when the item isn't

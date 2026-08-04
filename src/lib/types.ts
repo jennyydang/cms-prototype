@@ -85,16 +85,44 @@ export interface ContentItem {
  * described once (src/lib/blocks.ts) as a list of editable fields, and the
  * builder UI renders the palette, canvas preview, and inspector form from
  * that single definition instead of hardcoding a form per block.
+ *
+ * Two kinds of block live in the same registry:
+ *  - "content" blocks are simple, single-purpose (Hero, Text, Image…).
+ *  - "widget" blocks bundle several related, repeatable pieces of content
+ *    behind one purpose-built name — a Footer widget knows it needs a link
+ *    list, a social link list, and a copyright line; a Product Gallery
+ *    widget knows it needs a list of products. That repeatable list is a
+ *    "repeater" field: a field whose value is an array of items, where each
+ *    item has its own small set of sub-fields (itemFields).
  */
-export type PageBlockType = 'hero' | 'text' | 'image' | 'columns' | 'quote' | 'cta' | 'spacer'
+export type PageBlockType =
+  | 'hero'
+  | 'text'
+  | 'image'
+  | 'columns'
+  | 'quote'
+  | 'cta'
+  | 'spacer'
+  | 'footer'
+  | 'product-gallery'
+
+export type BlockCategory = 'content' | 'widget'
+
+/** One entry inside a repeater field's list, e.g. one product or one link. */
+export interface RepeaterItem {
+  id: string
+  [key: string]: string
+}
+
+export type BlockFieldValue = string | RepeaterItem[]
 
 export interface PageBlock {
   id: string
   type: PageBlockType
-  data: Record<string, string>
+  data: Record<string, BlockFieldValue>
 }
 
-export type BlockInputKind = 'text' | 'textarea' | 'select' | 'media' | 'url'
+export type BlockInputKind = 'text' | 'textarea' | 'select' | 'media' | 'url' | 'repeater'
 
 export interface BlockFieldDef {
   key: string
@@ -102,6 +130,12 @@ export interface BlockFieldDef {
   input: BlockInputKind
   options?: FieldOption[]
   placeholder?: string
+  /** Value a new repeater item's field starts with. Ignored outside itemFields. */
+  default?: string
+  /** Only set when input is 'repeater': the shape of each item in the list. */
+  itemFields?: BlockFieldDef[]
+  /** Only set when input is 'repeater': singular noun used for "Add {itemLabel}". */
+  itemLabel?: string
 }
 
 export interface BlockTypeDef {
@@ -109,8 +143,9 @@ export interface BlockTypeDef {
   label: string
   description: string
   icon: string
+  category: BlockCategory
   fields: BlockFieldDef[]
-  defaultData: Record<string, string>
+  defaultData: Record<string, BlockFieldValue>
 }
 
 export type MediaKind = 'image' | 'document' | 'video'

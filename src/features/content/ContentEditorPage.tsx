@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Bold,
@@ -419,17 +419,16 @@ export function ContentEditorPage() {
             <Textarea id="excerpt" rows={3} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
           </Field>
 
-          <a
-            href={`#preview-${item.id}`}
-            onClick={(e) => {
-              e.preventDefault()
-              showToast({ title: 'Preview', description: 'Preview rendering is not wired up in this prototype.', variant: 'info' })
-            }}
+          <Link
+            to={`/content/${contentType.slug}/${item.id}/preview`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Eye className="h-4 w-4" aria-hidden="true" />
             Preview
-          </a>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </Link>
         </aside>
       </div>
 

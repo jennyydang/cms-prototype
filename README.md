@@ -53,6 +53,10 @@ permission checks against a real API.
   Content Types, block types are defined once in a registry
   (`src/lib/blocks.ts`) and the palette/canvas/inspector all render from
   that shared schema.
+- **Preview** — opens a chrome-free render of a content item in a new tab:
+  hero image, title, meta, and either its page-builder layout or rich-text
+  body, with a desktop/mobile width toggle and a banner when the item isn't
+  published yet.
 - **Media Library** — drag-and-drop or click-to-upload (real image files are
   read and previewed via `FileReader`; other kinds get a deterministic
   gradient placeholder), search/filter, and an asset detail panel with

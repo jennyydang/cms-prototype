@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
+  Eye,
   GripVertical,
   ChevronUp,
   ChevronDown,
@@ -174,6 +175,16 @@ export function PageBuilderPage() {
         <span aria-live="polite" className="text-xs text-slate-400">
           {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : ''}
         </span>
+        <Link
+          to={`/content/${contentType.slug}/${id}/preview`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          <Eye className="h-4 w-4" aria-hidden="true" />
+          Preview
+          <span className="sr-only"> (opens in a new tab)</span>
+        </Link>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[240px_1fr_320px]">
